@@ -4,16 +4,25 @@ import {
   Controller,
   HttpCode,
   HttpStatus,
+  NotFoundException,
   Post,
+  UnauthorizedException,
+  UsePipes,
 } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../../prisma.service';
 import { RegisterAuthDto } from './dto/register-auth.dto';
-import { hash } from 'bcrypt';
+import { compare, hash } from 'bcrypt';
 import { LoginAuthDto } from './dto/login-auth.dto';
+import { ZodValidationPipe } from 'nestjs-zod';
 
 @Controller('auth')
+@UsePipes(new ZodValidationPipe())
 export class AuthController {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private jwtService: JwtService,
+  ) {}
 
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
@@ -47,5 +56,33 @@ export class AuthController {
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  async login(@Body() data: LoginAuthDto) {}
+  async login(@Body() data: LoginAuthDto) {
+    try {
+      // CHECK USER BY EMAIL
+      const user = await this.prisma.user.findFirst({
+        where: { email: data.email },
+      });
+      if (!user) {
+        throw new NotFoundException('User not found');
+      }
+
+      // CHECK PASSWORD
+      const match = await compare(data.password, user.password);
+      if (!match) {
+        throw new UnauthorizedException('Wrong password');
+      }
+
+      // CREATE TOKEN
+      const { password, ...result } = user;
+      const token = await this.jwtService.signAsync({ ...result });
+
+      return {
+        status: 'success',
+        message: 'User logged in successfully',
+        data: token,
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
 }

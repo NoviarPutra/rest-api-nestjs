@@ -10,11 +10,11 @@ const RegisterScheme = z.object({
     .min(6, { message: 'Password must be at least 6 characters' })
     .regex(
       new RegExp(
-        '^(?=.*[A-Za-z])(?=.*\\d)(?=.*[@$!%*#?&])[A-Za-z\\d@$!%*#?&]{6,}$',
+        '^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{6,}$',
       ),
       {
         message:
-          'Password must contain at least one number, one letter, and one symbol',
+          'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character',
       },
     ),
   role: z.enum(['USER', 'ADMIN']).default('USER'),

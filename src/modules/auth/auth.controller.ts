@@ -15,7 +15,9 @@ import { RegisterAuthDto } from './dto/register-auth.dto';
 import { compare, hash } from 'bcrypt';
 import { LoginAuthDto } from './dto/login-auth.dto';
 import { ZodValidationPipe } from 'nestjs-zod';
+import { Public } from './auth.decorator';
 
+@Public()
 @Controller('auth')
 @UsePipes(new ZodValidationPipe())
 export class AuthController {
@@ -79,7 +81,7 @@ export class AuthController {
       return {
         status: 'success',
         message: 'User logged in successfully',
-        data: token,
+        token: token,
       };
     } catch (error) {
       throw error;

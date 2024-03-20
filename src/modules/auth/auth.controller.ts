@@ -1,48 +1,29 @@
 import {
-  BadRequestException,
-  Body,
   Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
   HttpCode,
   HttpStatus,
-  NotFoundException,
-  Post,
-  UnauthorizedException,
   UsePipes,
 } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
-import { PrismaService } from '../../prisma.service';
+import { AuthService } from './auth.service';
 import { RegisterAuthDto } from './dto/register-auth.dto';
-import { compare, hash } from 'bcrypt';
-import { LoginAuthDto } from './dto/login-auth.dto';
 import { ZodValidationPipe } from 'nestjs-zod';
-import { Public } from './auth.decorator';
 
-@Public()
 @Controller('auth')
 @UsePipes(new ZodValidationPipe())
 export class AuthController {
-  constructor(
-    private readonly prisma: PrismaService,
-    private jwtService: JwtService,
-  ) {}
+  constructor(private readonly authService: AuthService) {}
 
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
-  async register(@Body() data: RegisterAuthDto) {
+  async create(@Body() registerAuthDto: RegisterAuthDto) {
     try {
-      const check = await this.prisma.user.findFirst({
-        where: { email: data.email },
-      });
-
-      if (check) {
-        throw new BadRequestException('Email already exists');
-      }
-
-      const hashPassword = await hash(data.password, 10);
-
-      const user = await this.prisma.user.create({
-        data: { ...data, password: hashPassword },
-      });
+      const user = await this.authService.create(registerAuthDto);
 
       const { password, ...result } = user;
 
@@ -53,38 +34,8 @@ export class AuthController {
       };
     } catch (error) {
       throw error;
-    }
-  }
-
-  @Post('login')
-  @HttpCode(HttpStatus.OK)
-  async login(@Body() data: LoginAuthDto) {
-    try {
-      // CHECK USER BY EMAIL
-      const user = await this.prisma.user.findFirst({
-        where: { email: data.email },
-      });
-      if (!user) {
-        throw new NotFoundException('User not found');
-      }
-
-      // CHECK PASSWORD
-      const match = await compare(data.password, user.password);
-      if (!match) {
-        throw new UnauthorizedException('Wrong password');
-      }
-
-      // CREATE TOKEN
-      const { password, ...result } = user;
-      const token = await this.jwtService.signAsync({ ...result });
-
-      return {
-        status: 'success',
-        message: 'User logged in successfully',
-        token: token,
-      };
-    } catch (error) {
-      throw error;
+    } finally {
+      console.log('Done');
     }
   }
 }

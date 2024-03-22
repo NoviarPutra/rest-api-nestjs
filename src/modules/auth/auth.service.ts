@@ -1,9 +1,15 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { RegisterAuthDto } from './dto/register-auth.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from '../users/entities/user.entity';
 import { Repository } from 'typeorm';
-import { hash } from 'bcrypt';
+import { compare, hash } from 'bcrypt';
+import { LoginAuthDto } from './dto/login-auth.dto';
 
 @Injectable()
 export class AuthService {
@@ -27,5 +33,23 @@ export class AuthService {
     });
 
     return this.userRepository.save(user);
+  }
+
+  async validateUser(loginAuthDto: LoginAuthDto) {
+    // Find user by email
+    const user = await this.userRepository.findOne({
+      where: { email: loginAuthDto.email },
+    });
+    if (!user) {
+      throw new NotFoundException('User not found | wrong email');
+    }
+
+    // Check password
+    const checkPassword = await compare(loginAuthDto.password, user.password);
+    if (!checkPassword) {
+      throw new UnauthorizedException('Wrong password');
+    }
+
+    return user;
   }
 }

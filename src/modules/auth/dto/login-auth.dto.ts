@@ -8,9 +8,9 @@ const LoginScheme = z.object({
     .min(6, { message: 'Password must be at least 6 characters' }),
 });
 export class LoginAuthDto extends createZodDto(LoginScheme) {
-  @ApiProperty({ type: String, example: 'a@b.com', required: true })
+  @ApiProperty({ type: String, example: 'email@example.com', required: true })
   email: string;
 
-  @ApiProperty({ type: String, example: '123456', required: true })
+  @ApiProperty({ type: String, example: 'Password', required: true })
   password: string;
 }

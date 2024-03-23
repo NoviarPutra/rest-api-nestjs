@@ -8,7 +8,15 @@ import {
   Delete,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
+import {
+  ApiBasicAuth,
+  ApiBearerAuth,
+  ApiHeader,
+  ApiHeaders,
+  ApiTags,
+} from '@nestjs/swagger';
 
+@ApiTags('Users')
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
@@ -18,10 +26,25 @@ export class UsersController {
   //   return this.usersService.create(createUserDto);
   // }
 
-  // @Get()
-  // findAll() {
-  //   return this.usersService.findAll();
-  // }
+  @Get()
+  @ApiBearerAuth()
+  async findAll() {
+    try {
+      const user = await this.usersService.findAll();
+
+      const userWithoutPassword = user.map((user) => {
+        const { password, ...result } = user;
+        return result;
+      });
+      return {
+        status: 'ok',
+        message: 'User fetched successfully',
+        data: userWithoutPassword,
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
 
   // @Get(':id')
   // findOne(@Param('id') id: string) {
